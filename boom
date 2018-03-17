@@ -18,7 +18,7 @@ else
         else
             export X_THAT_PYTHON=$1
             deactivate >/dev/null 2>&1 # might fail, don't care
-            git clean -dfx
+            git clean -Xdf
             $X_THAT_PYTHON -m venv .
             source ./bin/activate
             pip install -r requirements.txt
