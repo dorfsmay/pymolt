@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Please contribute: https://github.com/dorfsmay/pymolt
+
+if [[ $0 = $BASH_SOURCE ]] ; then
+    echo -e "\nDo not execute as a process ; use:\n    source $0 $1\n" >&2
+else
+    if [[ -z $1 ]] ; then
+        echo -e "\nNeeds the python interpreter or compiler to use to build the environment." >&2
+        echo -e "It needs to be in \$PATH or use full path ; eg:" >&2
+        echo -e "    source $0 python3" >&2
+        echo -e "    source $0 /opt/pypy3/bin/pypy3\n" >&2
+    else
+        if [[ $(dirname $BASH_SOURCE) != . ]] ; then
+            echo -e "\nToo DANGERous. Not doing it.">&2
+            echo -e "Please change directory to the repo wher this script is.\n">&2
+            echo -e "Also read this script before executing it.\n">&2
+        else
+            export X_THAT_PYTHON=$1
+            deactivate >/dev/null 2>&1 # might fail, don't care
+            git clean -dfx
+            $X_THAT_PYTHON -m venv .
+            source ./bin/activate
+            pip install -r requirements.txt
+            unset X_THAT_PYTHON
+        fi
+    fi
+fi
+
+
