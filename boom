@@ -2,27 +2,72 @@
 
 # Please contribute: https://github.com/dorfsmay/pymolt
 
+function usage() {
+    cat <<EOT >&2
+
+  usage:
+      source $0 which_python which_dir
+
+      which_python:
+          The python interpreter or compiler to be used when creating the
+          venv. It needs to either be in the current PATH or be a full path.
+          Make sure you use a python that is not already from a venv.
+
+      which_dir:
+          Directory containing the git repo where the venv needs to be
+          cleaned or initialised.
+
+EOT
+}
+
 if [[ $0 = $BASH_SOURCE ]] ; then
-    echo -e "\nDo not execute as a process ; use:\n    source $0 $1\n" >&2
+    echo -e '\n  Error: Do not execute as a process ; source this file.' >&2
+    usage
 else
-    if [[ -z $1 ]] ; then
-        echo -e "\nNeeds the python interpreter or compiler to use to build the environment." >&2
-        echo -e "It needs to be in \$PATH or use full path ; eg:" >&2
-        echo -e "    source $0 python3" >&2
-        echo -e "    source $0 /opt/pypy3/bin/pypy3\n" >&2
+    if [[ -z $1 || -z $2 ]] ; then
+        echo -e '\n  Error: Argument missing.' >&2
+        usage
     else
-        if [[ $(dirname $BASH_SOURCE) != . ]] ; then
-            echo -e "\nToo DANGERous. Not doing it.">&2
-            echo -e "Please change directory to the repo wher this script is.\n">&2
-            echo -e "Also read this script before executing it.\n">&2
+        export X_THIS_DIR=pwd
+        export X_THAT_PYTHON=$(which $1)
+        export X_THAT_DIR=$(cd $2 ; pwd)
+
+        if [[ ! -s $X_THAT_PYTHON || ! -x $X_THAT_PYTHON ]] ; then
+            echo -e "\n  Error: \"$1\" does not exist or is not executable" >&2
+            usage
         else
-            export X_THAT_PYTHON=$1
-            deactivate >/dev/null 2>&1 # might fail, don't care
-            git clean -Xdf
-            $X_THAT_PYTHON -m venv .
-            source ./bin/activate
-            pip install -r requirements.txt
-            unset X_THAT_PYTHON
+            if [[ ! -d $X_THAT_DIR ]] ; then
+                echo -e "\n  Error: \"$2\" is not a directory" >&2
+                usage
+            else
+
+                cat <<EOT
+
+        ** WARNING **
+
+  If you continue this will:
+    - delte all files matching the gitignore lists from:
+        $X_THAT_DIR
+
+    - re-install the venv using this python interpreter/compiler:
+        $X_THAT_PYTHON
+
+    - pip install packages from requirements.txt
+
+
+EOT
+        read -p "  Hit \"enter\" to continue, or \"ctrl-C\" to stop."
+                (
+                cd $X_THAT_DIR
+                deactivate >/dev/null 2>&1 # might fail, don't care
+                git clean -Xdf
+                $X_THAT_PYTHON -m venv .
+                source ./bin/activate
+                pip install -r requirements.txt
+                unset X_THAT_PYTHON
+                )
+            fi
+
         fi
     fi
 fi
